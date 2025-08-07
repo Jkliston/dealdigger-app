@@ -1,35 +1,74 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useState } from "react";
+import { searchAmazon } from "./api/search";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const handleSearch = async () => {
+    if (!query.trim()) return;
+
+    setLoading(true);
+    try {
+      const items = await searchAmazon(query);
+      setResults(items);
+    } catch (err) {
+      console.error("Error fetching Amazon results:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+    <div className="p-6 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-4 text-center">DealDigger</h1>
+
+      <div className="flex justify-center mb-6">
+        <input
+          type="text"
+          placeholder="Search for a product..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="border border-gray-300 px-4 py-2 rounded-l w-full max-w-md"
+        />
+        <button
+          onClick={handleSearch}
+          className="bg-blue-600 text-white px-6 py-2 rounded-r"
+        >
+          Search
         </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+
+      {loading && <p className="text-center">Loading...</p>}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {results.map((item, i) => (
+          <div key={i} className="border rounded p-4 shadow">
+            <img
+              src={item.Images?.Primary?.Medium?.URL}
+              alt={item.ItemInfo?.Title?.DisplayValue}
+              className="mb-2 w-full h-48 object-contain"
+            />
+            <h2 className="font-semibold text-lg">
+              {item.ItemInfo?.Title?.DisplayValue}
+            </h2>
+            <p className="text-green-700 font-bold mt-1">
+              ${item.Offers?.Listings?.[0]?.Price?.Amount}
+            </p>
+            <a
+              href={item.DetailPageURL}
+              target="_blank"
+              rel="noreferrer"
+              className="text-blue-500 underline block mt-2"
+            >
+              View on Amazon
+            </a>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
-export default App
+export default App;
